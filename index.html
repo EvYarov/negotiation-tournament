@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Чек-лист переговорной игры (Sheets backend)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#f3ece0;--bg-card:#fbf6ec;--ink:#1a1a1a;--ink-soft:#5a5650;--line:#cfc5b3;--line-strong:#8a8377;--accent:#b8341a;--accent-soft:#e8c4b8;--green:#2e6b3a;--green-soft:#c8dcc4;--neutral:#8a8377;--warn:#a06a1f;--warn-soft:#f1d9a6}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:15px;line-height:1.5;min-height:100vh}
+  .wrap{max-width:920px;margin:0 auto;padding:24px 18px 80px}
+  h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-0.01em;margin:0 0 12px}
+  h1{font-size:32px;line-height:1.1;font-weight:800}h2{font-size:21px;margin-top:26px}
+  h3{font-size:15px;margin:16px 0 8px;color:var(--ink-soft);font-weight:500;font-style:italic;text-transform:uppercase;letter-spacing:0.04em}
+  p{margin:0 0 12px;color:var(--ink-soft)}code,.mono{font-family:'IBM Plex Mono',monospace;font-size:13px}
+  hr{border:none;border-top:1px solid var(--line);margin:24px 0}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line-strong);padding-bottom:14px;margin-bottom:24px;flex-wrap:wrap;gap:10px}
+  .brand{font-family:'Fraunces',serif;font-weight:800;font-size:20px}
+  .brand small{font-weight:400;color:var(--ink-soft);font-style:italic;font-size:14px;margin-left:8px}
+  .who{font-size:13px;color:var(--ink-soft);display:flex;align-items:center;gap:10px}.who b{color:var(--ink)}
+  .conn{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--ink-soft)}
+  .conn.ok::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--green)}
+  .conn.bad::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.4s infinite}
+  .card{background:var(--bg-card);border:1px solid var(--line);padding:20px;margin-bottom:14px;border-radius:2px}
+  .card.tight{padding:14px 16px}
+  button,.btn{font-family:inherit;font-size:14px;font-weight:500;padding:10px 18px;border:1px solid var(--ink);background:var(--ink);color:var(--bg-card);cursor:pointer;border-radius:1px;letter-spacing:0.02em;transition:transform .08s ease,opacity .12s ease}
+  button:hover{transform:translateY(-1px)}button:disabled{opacity:.4;cursor:not-allowed;transform:none}
+  .btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--line-strong)}
+  .btn-danger{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn-warn{background:var(--warn);border-color:var(--warn);color:#fff}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;align-items:center}
+  input[type=text],input[type=password],input[type=number],input[type=url],textarea,select{width:100%;font-family:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--line-strong);background:#fff;color:var(--ink);border-radius:1px}
+  input[type=number]{width:90px}textarea{min-height:90px;resize:vertical}
+  label.field{display:block;margin-bottom:14px}
+  label.field>span{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.05em}
+  .pill{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:500;border:1px solid;letter-spacing:0.03em}
+  .pill-live{background:var(--green-soft);border-color:var(--green);color:var(--green)}
+  .pill-paused{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+  .pill-off{background:#e8e1d2;border-color:var(--line-strong);color:var(--ink-soft)}
+  .pulse::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;margin-right:6px;animation:pulse 1.4s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .scale{margin-bottom:10px}
+  .axis-label{font-family:'Fraunces',serif;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:6px}
+  .choices{display:flex;flex-direction:column;gap:6px}
+  .choice{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border:1px solid var(--line);background:#fff;cursor:pointer;border-radius:2px;transition:border-color .1s,background .1s}
+  .choice input{margin-top:3px;flex-shrink:0}
+  .choice:hover{border-color:var(--line-strong)}
+  .choice.sel.score-0{border-color:var(--accent);background:#f7e1dd}
+  .choice.sel.score-1{border-color:var(--neutral);background:#ece6d8}
+  .choice.sel.score-2{border-color:var(--green);background:var(--green-soft)}
+  .choice .lbl{flex:1;font-size:14px}
+  .choice .pts{font-family:'Fraunces',serif;font-weight:800;font-size:18px;color:var(--ink-soft)}
+  .choice.sel .pts{color:var(--ink)}
+  .toggle{display:flex;align-items:center;gap:12px;padding:9px 12px;border:1px solid var(--line);background:#fff;cursor:pointer;border-radius:2px;margin-bottom:6px}
+  .toggle input{margin:0}.toggle.sel{border-color:var(--ink);background:var(--bg)}
+  .toggle .lbl{flex:1;font-size:14px}.toggle .pts{font-family:'Fraunces',serif;font-weight:600;font-size:14px;color:var(--ink-soft)}
+  .tbl{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
+  .tbl th,.tbl td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+  .tbl th{font-weight:500;color:var(--ink-soft);text-transform:uppercase;font-size:11px;letter-spacing:0.08em;border-bottom:1px solid var(--line-strong)}
+  .tbl td.num{font-family:'IBM Plex Mono',monospace;text-align:right}
+  .rounds{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+  .round-tile{padding:12px;border:1px solid var(--line);background:#fff;text-align:center;border-radius:2px;cursor:pointer}
+  .round-tile.active{border-color:var(--ink);background:var(--bg);outline:3px solid var(--accent-soft)}
+  .round-tile .num{font-family:'Fraunces',serif;font-size:26px;font-weight:800;line-height:1}
+  .round-tile .desc{font-size:11px;color:var(--ink-soft);margin-top:4px}
+  .case-bar{display:flex;align-items:center;gap:10px;background:var(--bg);padding:10px 14px;border:1px solid var(--line-strong);border-radius:2px;margin:10px 0;flex-wrap:wrap}
+  .case-bar .now{font-family:'Fraunces',serif;font-size:18px;font-weight:600}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:560px){.grid-2{grid-template-columns:1fr}.rounds{grid-template-columns:1fr}}
+  .muted{color:var(--ink-soft);font-size:13px}
+  .err{color:var(--accent);font-size:13px;margin-top:6px}
+  .ok{color:var(--green);font-size:13px;margin-top:6px}
+  .badge{display:inline-block;padding:2px 8px;background:var(--bg);border:1px solid var(--line);border-radius:99px;font-size:11px;font-family:'IBM Plex Mono',monospace}
+  details summary{cursor:pointer;color:var(--ink-soft);font-size:13px;padding:4px 0}
+  details[open] summary{margin-bottom:8px}
+  .setup{padding:24px;background:var(--warn-soft);border:1px solid var(--warn);border-radius:2px}
+  .setup ol{padding-left:20px}.setup li{margin-bottom:8px;color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div><div class="brand">Чек-лист переговорной игры <small>Sheets backend</small></div></div>
+    <div class="who" id="who"></div>
+  </div>
+  <div id="app"></div>
+  <hr/>
+  <details>
+    <summary>Подсказка</summary>
+    <p class="muted" style="margin-top:8px">
+      Все данные хранятся в вашей Google-таблице через Apps Script. Артефакт — только интерфейс.
+      Идентификация — по имени: если ввести то же имя, что и раньше, ваши голоса найдутся и обновятся.
+      Двоим с одинаковыми именами надо различаться (например, добавить инициал).
+    </p>
+  </details>
+</div>
+<script>
+/* ============================================================
+ *  CONFIG — заполнить перед использованием
+ * ============================================================ */
+const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzFjkV-9BWmCRlByCx8ybX35fNXb3uZDBfIkxJ692MogTpmOpBvTEHlXL9acDvEuJ65Jw/exec"; // <-- сюда вставьте URL вашего Apps Script web app (заканчивается на /exec)
+const FACILITATOR_PIN = "2208";
+
+const POLL_OBSERVER_WAITING = 5000;  // ожидание открытия раунда
+const POLL_OBSERVER_FILLING = 15000; // во время заполнения формы (реже, чтобы не сбивать ввод)
+const POLL_FACILITATOR = 4000;       // дашборд ведущего
+
+/* ============================================================
+ *  CONSTANTS
+ * ============================================================ */
+const ROUND_DEFS = {
+  1: { hasBehavior:true, hasTai:false, hasImpression:false, max:6, label:"Поведение" },
+  2: { hasBehavior:true, hasTai:true,  hasImpression:false, max:9, label:"Поведение + ТАИ" },
+  3: { hasBehavior:true, hasTai:true,  hasImpression:true,  max:11, label:"+ Общее впечатление" },
+};
+const BEHAVIOR_AXES = [
+  { key:"axis1", title:"Шкала 1", options:[
+    { score:0, title:"Обвинение" },
+    { score:1, title:"Объединение вины / отказ от обвинения" },
+    { score:2, title:"Конструктивная критика" },
+  ]},
+  { key:"axis2", title:"Шкала 2", options:[
+    { score:0, title:"Авторитарность" },
+    { score:1, title:"Отказ от авторитарности / равная коммуникация" },
+    { score:2, title:"Приглашение к совместному принятию решения" },
+  ]},
+  { key:"axis3", title:"Шкала 3", options:[
+    { score:0, title:"Категоричность, безапелляционность" },
+    { score:1, title:"Не категоричность, но определённость" },
+    { score:2, title:"Приглашение к обсуждению" },
+  ]},
+];
+const TAI_ITEMS = [
+  { key:"thesis",       title:"Тезис («Я считаю, что…»)" },
+  { key:"argument",     title:"Аргумент («потому что…»)" },
+  { key:"illustration", title:"Иллюстрация («например…»)" },
+];
+const IMPRESSION_ITEMS = [
+  { key:"convincing", title:"Аргументы / контраргументы были убедительнее" },
+  { key:"logic",      title:"Соединение аргументов в общую логику" },
+];
+
+/* ============================================================
+ *  CLIENT STATE
+ * ============================================================ */
+const state = { role:null, voterName:null, game:null, votes:[], pinOk:false, lastSyncAt:0, online:false };
+function gameUid(){ return "g_" + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function escapeHtml(s){ return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function cssSafe(s){ return String(s).replace(/[^a-zA-Z0-9_]/g,"_"); }
+
+const app = document.getElementById("app");
+const whoEl = document.getElementById("who");
+
+/* ============================================================
+ *  REMOTE API
+ * ============================================================ */
+async function postAction(action, payload={}) {
+  if (!WEBHOOK_URL) throw new Error("WEBHOOK_URL not set");
+  const body = JSON.stringify({ action, ...payload });
+  const r = await fetch(WEBHOOK_URL, {
+    method: "POST",
+    body,
+    redirect: "follow",
+    headers: { "Content-Type": "text/plain;charset=utf-8" }, // text/plain чтобы избежать CORS preflight
+  });
+  const text = await r.text();
+  try { return JSON.parse(text); } catch(e){ throw new Error("Bad response: " + text.slice(0,200)); }
+}
+
+/* ============================================================
+ *  URL params (сохраняем имя в URL чтобы пережить перезагрузку)
+ * ============================================================ */
+function readUrlParams() {
+  try {
+    const p = new URLSearchParams(location.search);
+    return { name: p.get("name"), role: p.get("role") };
+  } catch(e){ return { name:null, role:null }; }
+}
+function writeUrlParam(key, val) {
+  try {
+    const u = new URL(location.href);
+    if (val) u.searchParams.set(key, val); else u.searchParams.delete(key);
+    history.replaceState({}, "", u);
+  } catch(e){}
+}
+
+/* ============================================================
+ *  RENDER ROOT / HEADER
+ * ============================================================ */
+function renderConn() {
+  if (!WEBHOOK_URL) return "";
+  const ageSec = state.lastSyncAt ? Math.floor((Date.now() - state.lastSyncAt)/1000) : 999;
+  const cls = ageSec < 20 ? "conn ok" : "conn bad";
+  const txt = ageSec < 20 ? `связь · ${ageSec}с назад` : (state.lastSyncAt ? `нет связи (${ageSec}с)` : "нет связи");
+  return `<span class="${cls}">${txt}</span>`;
+}
+function renderWho() {
+  if (!state.role) { whoEl.innerHTML = renderConn(); return; }
+  const role = state.role === "facilitator"
+    ? `<b>Ведущий</b>` : `Наблюдатель: <b>${escapeHtml(state.voterName||"?")}</b>`;
+  whoEl.innerHTML = `${renderConn()} <span>·</span> ${role} · <a href="#" id="logout">сменить</a>`;
+  document.getElementById("logout")?.addEventListener("click", e=>{
+    e.preventDefault();
+    state.role = null; state.voterName = null; state.pinOk = false;
+    writeUrlParam("name", null); writeUrlParam("role", null);
+    render();
+  });
+}
+
+/* ============================================================
+ *  SETUP SCREEN (если WEBHOOK_URL не задан)
+ * ============================================================ */
+function renderSetup() {
+  app.innerHTML = `
+    <h1>Настройка не завершена</h1>
+    <div class="setup">
+      <p style="margin:0 0 12px"><b>Перед использованием нужно подключить Google-таблицу через Apps Script.</b></p>
+      <ol>
+        <li>Создайте новый Google Sheet</li>
+        <li>Меню → Расширения → Apps Script</li>
+        <li>Удалите дефолтный код, вставьте содержимое файла <code>apps-script.gs</code> (приложен к этому артефакту)</li>
+        <li>Сохраните проект</li>
+        <li>Кнопка «Развернуть» (Deploy) → «Новое развёртывание» → тип «Веб-приложение». Доступ — «Все»</li>
+        <li>Скопируйте полученный URL вида <code>https://script.google.com/macros/s/.../exec</code></li>
+        <li>В этом HTML-файле найдите строку <code>const WEBHOOK_URL = ""</code> и вставьте URL в кавычки</li>
+      </ol>
+      <p class="muted" style="margin-top:14px">Полная инструкция со скриншотами — в комментарии в начале файла apps-script.gs</p>
+    </div>`;
+}
+
+/* ============================================================
+ *  ROLE PICKER
+ * ============================================================ */
+function renderRolePicker() {
+  app.innerHTML = `
+    <h1>Оценка переговорных раундов</h1>
+    <p>Инструмент наблюдателя для трёхраундовой игры. Все данные хранятся в подключённой Google-таблице.</p>
+    <div class="grid-2" style="margin-top:18px">
+      <div class="card">
+        <h2 style="margin-top:0">Я наблюдатель</h2>
+        <p class="muted">Заполняю чек-лист по командам, когда ведущий открывает приём.</p>
+        <button id="goObs">Войти как наблюдатель</button>
+      </div>
+      <div class="card">
+        <h2 style="margin-top:0">Я ведущий</h2>
+        <p class="muted">Создаю игру, переключаю раунды и кейсы, вижу результаты.</p>
+        <button class="btn-ghost" id="goFac">Войти как ведущий</button>
+      </div>
+    </div>`;
+  document.getElementById("goObs").onclick = () => { state.role="observer"; writeUrlParam("role","observer"); render(); };
+  document.getElementById("goFac").onclick = () => { state.role="facilitator"; writeUrlParam("role","facilitator"); render(); };
+}
+
+/* ============================================================
+ *  FACILITATOR — PIN
+ * ============================================================ */
+function renderFacilitatorPin() {
+  app.innerHTML = `
+    <h1>Вход ведущего</h1>
+    <div class="card" style="max-width:380px">
+      <label class="field"><span>Пинкод</span><input type="password" id="pin" placeholder="••••" autocomplete="off"/></label>
+      <button id="okPin">Войти</button>
+      <div class="err" id="pinErr" style="display:none">Неверный пинкод</div>
+    </div>`;
+  document.getElementById("okPin").onclick = () => {
+    const v = document.getElementById("pin").value.trim();
+    if (v === FACILITATOR_PIN) { state.pinOk = true; render(); }
+    else document.getElementById("pinErr").style.display="block";
+  };
+}
+
+/* ============================================================
+ *  FACILITATOR — NEW GAME
+ * ============================================================ */
+function renderFacilitatorNoGame() {
+  app.innerHTML = `
+    <h1>Создать новую игру</h1>
+    <p>Активной игры сейчас нет. Заполните данные — они запишутся в Google-таблицу.</p>
+    <div class="card">
+      <label class="field"><span>Название игры</span><input type="text" id="gName" placeholder="например, Сессия 30 апреля"/></label>
+      <label class="field"><span>Команды (по одной в строке)</span><textarea id="gTeams" placeholder="Команда А&#10;Команда Б&#10;Команда В"></textarea></label>
+      <label class="field"><span>Количество кейсов на раунд</span><input type="number" id="gCases" min="1" max="20" value="3"/></label>
+      <div class="btn-row"><button id="createGame">Создать игру</button></div>
+      <div class="err" id="createErr" style="display:none"></div>
+    </div>`;
+  document.getElementById("createGame").onclick = async () => {
+    const errEl = document.getElementById("createErr"); errEl.style.display = "none";
+    const name = document.getElementById("gName").value.trim() || ("Игра " + new Date().toLocaleDateString("ru-RU"));
+    const teams = document.getElementById("gTeams").value.split("\n").map(s=>s.trim()).filter(Boolean);
+    const totalCases = Math.max(1, parseInt(document.getElementById("gCases").value,10) || 3);
+    if (teams.length < 2) { errEl.textContent = "Нужно минимум 2 команды"; errEl.style.display="block"; return; }
+    const newGame = { gameId: gameUid(), gameName: name, teams, totalCases, createdAt: Date.now() };
+    try {
+      const r = await postAction("createGame", { game: newGame });
+      if (!r.ok) throw new Error(r.error || "create failed");
+      await pollOnce();
+      render();
+    } catch(e) {
+      errEl.textContent = "Ошибка создания: " + e.message; errEl.style.display = "block";
+    }
+  };
+}
+
+/* ============================================================
+ *  FACILITATOR — DASHBOARD
+ * ============================================================ */
+function renderFacilitatorDashboard() {
+  const g = state.game;
+  const totals = computeTotals(state.votes, g.teams);
+  const teamsLine = g.teams.map(t=>`<span class="badge">${escapeHtml(t)}</span>`).join(" ");
+
+  app.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px">
+      <div>
+        <h1 style="margin-bottom:4px">${escapeHtml(g.gameName)}</h1>
+        <div class="muted mono">${g.gameId} · кейсов на раунд: ${g.totalCases}</div>
+      </div>
+      <div>${roundStatusPill()}</div>
+    </div>
+    <p style="margin-top:14px">Команды: ${teamsLine}</p>
+
+    <h2>Раунд</h2>
+    <div class="rounds">
+      ${[1,2,3].map(r=>`
+        <div class="round-tile ${g.currentRound===r?"active":""}" data-r="${r}">
+          <div class="num">${r}</div>
+          <div class="desc">${ROUND_DEFS[r].label}<br/>макс ${ROUND_DEFS[r].max} б.</div>
+        </div>`).join("")}
+    </div>
+
+    ${g.currentRound ? `
+    <div class="case-bar">
+      <span class="now">Кейс ${g.currentCase} / ${g.totalCases}</span>
+      <button class="btn-ghost" id="prevCase" ${g.currentCase<=1?'disabled':''}>← кейс</button>
+      <button class="btn-ghost" id="nextCase" ${g.currentCase>=g.totalCases?'disabled':''}>кейс →</button>
+      <button class="btn-ghost" id="addCase">+ кейс к лимиту</button>
+      <span style="flex:1"></span>
+      ${g.isRoundActive
+        ? `<button class="btn-warn" id="closeRound">Закрыть приём</button>`
+        : `<button id="openRound">Открыть приём голосов</button>`}
+    </div>` : `<p class="muted">Выберите раунд, чтобы открыть приём голосов.</p>`}
+
+    <div class="btn-row">
+      <button class="btn-ghost" id="exportCsv">Экспорт CSV</button>
+      <button class="btn-ghost" id="newGame">Завершить и начать новую</button>
+      <button class="btn-danger" id="delGame">Удалить эту игру полностью</button>
+    </div>
+    <p class="muted" style="margin-top:10px">Голосов получено: <b>${state.votes.length}</b></p>
+
+    <h2>Итоги</h2>
+    ${renderResultsTable(totals, g.teams)}
+
+    <details style="margin-top:12px">
+      <summary>Детализация по кейсам</summary>
+      ${renderCasesDetail(state.votes, g)}
+    </details>`;
+
+  document.querySelectorAll(".round-tile").forEach(el=>{
+    el.onclick = async () => {
+      const r = parseInt(el.dataset.r,10);
+      g.currentRound = r; g.currentCase = 1; g.isRoundActive = false;
+      await postAction("updateState", { game: g }); await pollOnce(); render();
+    };
+  });
+  document.getElementById("openRound")?.addEventListener("click", async ()=>{
+    g.isRoundActive=true; await postAction("updateState",{game:g}); await pollOnce(); render();
+  });
+  document.getElementById("closeRound")?.addEventListener("click", async ()=>{
+    g.isRoundActive=false; await postAction("updateState",{game:g}); await pollOnce(); render();
+  });
+  document.getElementById("prevCase")?.addEventListener("click", async ()=>{
+    if (g.currentCase>1) { g.currentCase--; g.isRoundActive=false; await postAction("updateState",{game:g}); await pollOnce(); render(); }
+  });
+  document.getElementById("nextCase")?.addEventListener("click", async ()=>{
+    if (g.currentCase<g.totalCases) { g.currentCase++; g.isRoundActive=false; await postAction("updateState",{game:g}); await pollOnce(); render(); }
+  });
+  document.getElementById("addCase")?.addEventListener("click", async ()=>{
+    g.totalCases++; await postAction("updateState",{game:g}); await pollOnce(); render();
+  });
+  document.getElementById("exportCsv").onclick = exportCsv;
+  document.getElementById("newGame").onclick = async () => {
+    if (!confirm("Завершить текущую игру? Данные останутся в Google-таблице как история.")) return;
+    await postAction("resetState"); state.game = null; state.votes = []; await pollOnce(); render();
+  };
+  document.getElementById("delGame").onclick = async () => {
+    if (!confirm("Удалить эту игру и все её голоса из Google-таблицы? Это нельзя отменить.")) return;
+    await postAction("deleteGame", { gameId: g.gameId });
+    state.game = null; state.votes = []; await pollOnce(); render();
+  };
+}
+
+function roundStatusPill(){
+  const g = state.game; if (!g) return "";
+  if (g.currentRound === 0) return `<span class="pill pill-off">Раунд не выбран</span>`;
+  if (g.isRoundActive) return `<span class="pill pill-live pulse">Р${g.currentRound} · кейс ${g.currentCase} · приём идёт</span>`;
+  return `<span class="pill pill-paused">Р${g.currentRound} · кейс ${g.currentCase} · закрыт</span>`;
+}
+
+/* ============================================================
+ *  SCORING
+ * ============================================================ */
+function scoreOfVote(v, def){
+  let s = 0;
+  if (def.hasBehavior) {
+    s += (typeof v.axis1 === "number" ? v.axis1 : 0);
+    s += (typeof v.axis2 === "number" ? v.axis2 : 0);
+    s += (typeof v.axis3 === "number" ? v.axis3 : 0);
+  }
+  if (def.hasTai) { if (v.thesis) s+=1; if (v.argument) s+=1; if (v.illustration) s+=1; }
+  if (def.hasImpression) { if (v.convincing) s+=1; if (v.logic) s+=1; }
+  return s;
+}
+function computeTotals(votes, teams){
+  const out = {1:{},2:{},3:{}};
+  for (const r of [1,2,3]) for (const t of teams) out[r][t] = { sum:0, count:0 };
+  for (const v of votes) {
+    const def = ROUND_DEFS[v.round]; if (!def || !out[v.round][v.teamId]) continue;
+    out[v.round][v.teamId].sum += scoreOfVote(v, def);
+    out[v.round][v.teamId].count += 1;
+  }
+  return out;
+}
+function renderResultsTable(totals, teams){
+  const head = `<tr><th>Команда</th><th>Р1</th><th>Р2</th><th>Р3</th><th>Сумма</th><th>Голосов</th></tr>`;
+  const rows = teams.map(t=>{
+    const r1=totals[1][t]?.sum||0, r2=totals[2][t]?.sum||0, r3=totals[3][t]?.sum||0;
+    const cnt=(totals[1][t]?.count||0)+(totals[2][t]?.count||0)+(totals[3][t]?.count||0);
+    return `<tr><td>${escapeHtml(t)}</td><td class="num">${r1}</td><td class="num">${r2}</td><td class="num">${r3}</td><td class="num"><b>${r1+r2+r3}</b></td><td class="num">${cnt}</td></tr>`;
+  }).join("");
+  return `<div class="card tight"><table class="tbl">${head}${rows}</table></div>`;
+}
+function renderCasesDetail(votes, g){
+  let html = "";
+  for (const r of [1,2,3]) {
+    const def = ROUND_DEFS[r];
+    const casesUsed = Array.from(new Set(votes.filter(v=>v.round===r).map(v=>v.caseNum))).sort((a,b)=>a-b);
+    if (casesUsed.length===0) continue;
+    const head = `<tr><th>Команда</th>${casesUsed.map(c=>`<th>Кейс ${c}</th>`).join("")}<th>Σ Р${r}</th></tr>`;
+    const rows = g.teams.map(t=>{
+      const cells = casesUsed.map(c=>{
+        const sum = votes.filter(v=>v.round===r && v.caseNum===c && v.teamId===t).reduce((a,v)=>a+scoreOfVote(v,def),0);
+        return `<td class="num">${sum}</td>`;
+      }).join("");
+      const totSum = votes.filter(v=>v.round===r && v.teamId===t).reduce((a,v)=>a+scoreOfVote(v,def),0);
+      return `<tr><td>${escapeHtml(t)}</td>${cells}<td class="num"><b>${totSum}</b></td></tr>`;
+    }).join("");
+    html += `<div class="card tight"><h3 style="margin-top:0">Раунд ${r} — ${def.label}</h3><table class="tbl">${head}${rows}</table></div>`;
+  }
+  return html || `<p class="muted">Пока нет данных по кейсам.</p>`;
+}
+
+function exportCsv(){
+  if (!state.game) return;
+  const rows = [["voterName","round","case","team","axis1","axis2","axis3","thesis","argument","illustration","convincing","logic","total","timestamp"]];
+  for (const v of state.votes) {
+    const def = ROUND_DEFS[v.round]||{};
+    rows.push([v.voterName, v.round, v.caseNum, v.teamId,
+      v.axis1??"", v.axis2??"", v.axis3??"",
+      v.thesis?1:0, v.argument?1:0, v.illustration?1:0,
+      v.convincing?1:0, v.logic?1:0,
+      scoreOfVote(v, def),
+      v.timestamp ? new Date(v.timestamp).toISOString() : "",
+    ]);
+  }
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob = new Blob(["\ufeff"+csv], {type:"text/csv;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url;
+  a.download = `${state.game.gameName.replace(/\W+/g,"_")}.csv`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ============================================================
+ *  OBSERVER
+ * ============================================================ */
+function renderObserverNeedName() {
+  app.innerHTML = `
+    <h1>Представьтесь</h1>
+    <p>Имя видно ведущему и используется как ваш идентификатор. Если введёте то же имя, что и раньше — ваши голоса найдутся и обновятся.</p>
+    <div class="card" style="max-width:420px">
+      <label class="field"><span>Ваше имя</span><input type="text" id="nm" placeholder="Имя Фамилия"/></label>
+      <button id="okNm">Продолжить</button>
+    </div>`;
+  document.getElementById("okNm").onclick = () => {
+    const v = document.getElementById("nm").value.trim(); if (v.length<2) return;
+    state.voterName = v; writeUrlParam("name", v); render();
+  };
+}
+function renderObserverWaiting() {
+  const g = state.game;
+  app.innerHTML = `
+    <h1>${g ? escapeHtml(g.gameName) : "Ожидание игры"}</h1>
+    ${g ? `<p class="muted">Команды: ${g.teams.map(t=>`<span class="badge">${escapeHtml(t)}</span>`).join(" ")}</p>` : ""}
+    <div class="card" style="text-align:center;padding:36px 20px">
+      ${g ? roundStatusPill() : `<span class="pill pill-off">Игра не создана</span>`}
+      <p style="margin-top:14px;font-size:16px">${g ? "Дождитесь команды ведущего об открытии приёма." : "Ведущий пока не создал игру."}</p>
+    </div>`;
+}
+function renderObserverForm() {
+  const g = state.game; const r = g.currentRound; const def = ROUND_DEFS[r];
+  app.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px">
+      <h1 style="margin-bottom:4px">Раунд ${r}</h1>
+      <div>${roundStatusPill()}</div>
+    </div>
+    <p class="muted">${def.label} · кейс <b>${g.currentCase}</b> из ${g.totalCases}. Можно менять выбор и сохранять заново, пока приём открыт.</p>
+    <div id="teamsForms"></div>`;
+  const host = document.getElementById("teamsForms");
+  for (const team of g.teams) {
+    const myVote = findMyVote(r, g.currentCase, team) || {
+      gameId: g.gameId, voterName: state.voterName,
+      round:r, caseNum:g.currentCase, teamId:team,
+      axis1:null, axis2:null, axis3:null,
+      thesis:false, argument:false, illustration:false,
+      convincing:false, logic:false,
+    };
+    const card = document.createElement("div"); card.className = "card";
+    card.innerHTML = renderTeamFormHtml(team, def, myVote);
+    host.appendChild(card);
+    bindTeamForm(card, def, myVote);
+  }
+}
+function findMyVote(round, caseNum, team){
+  return state.votes.find(v => v.voterName===state.voterName && v.round===round && v.caseNum===caseNum && v.teamId===team);
+}
+
+function renderTeamFormHtml(team, def, v){
+  const behaviorHtml = def.hasBehavior ? `
+    <h3>Поведение — три шкалы независимо</h3>
+    ${BEHAVIOR_AXES.map(ax => `
+      <div class="scale" data-axis="${ax.key}">
+        <div class="axis-label">${ax.title}</div>
+        <div class="choices">
+          ${ax.options.map(opt => `
+            <label class="choice score-${opt.score} ${v[ax.key]===opt.score?'sel':''}" data-axis="${ax.key}" data-score="${opt.score}">
+              <input type="radio" name="${ax.key}_${cssSafe(team)}" value="${opt.score}" ${v[ax.key]===opt.score?'checked':''}/>
+              <span class="lbl">${escapeHtml(opt.title)}</span>
+              <span class="pts">${opt.score}</span>
+            </label>`).join("")}
+        </div>
+      </div>`).join("")}` : "";
+
+  const taiHtml = def.hasTai ? `
+    <h3>Тезис — Аргумент — Иллюстрация</h3>
+    ${TAI_ITEMS.map(it => `
+      <label class="toggle ${v[it.key]?'sel':''}" data-key="${it.key}">
+        <input type="checkbox" ${v[it.key]?'checked':''}/>
+        <span class="lbl">${escapeHtml(it.title)}</span>
+        <span class="pts">+1</span>
+      </label>`).join("")}` : "";
+
+  const impressionHtml = def.hasImpression ? `
+    <h3>Общее впечатление переговоров</h3>
+    ${IMPRESSION_ITEMS.map(it => `
+      <label class="toggle ${v[it.key]?'sel':''}" data-key="${it.key}">
+        <input type="checkbox" ${v[it.key]?'checked':''}/>
+        <span class="lbl">${escapeHtml(it.title)}</span>
+        <span class="pts">+1</span>
+      </label>`).join("")}` : "";
+
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap">
+      <h2 style="margin:0">${escapeHtml(team)}</h2>
+      <div class="muted">Итого: <b class="js-total">${scoreOfVote(v, def)}</b> / ${def.max}</div>
+    </div>
+    ${behaviorHtml}${taiHtml}${impressionHtml}
+    <div class="btn-row"><button class="js-save">Сохранить</button></div>`;
+}
+
+function bindTeamForm(card, def, v){
+  card.querySelectorAll(".scale").forEach(scaleEl => {
+    const axisKey = scaleEl.dataset.axis;
+    scaleEl.querySelectorAll(".choice").forEach(el => {
+      el.addEventListener("click", () => {
+        const sc = parseInt(el.dataset.score,10);
+        v[axisKey] = sc;
+        scaleEl.querySelectorAll(".choice").forEach(x => x.classList.remove("sel","score-0","score-1","score-2"));
+        el.classList.add("sel","score-"+sc);
+        const inp = el.querySelector("input"); if (inp) inp.checked = true;
+        updateTotal();
+      });
+    });
+  });
+  card.querySelectorAll(".toggle").forEach(el => {
+    el.addEventListener("click", e => {
+      if (e.target.tagName !== "INPUT") { const inp = el.querySelector("input"); inp.checked = !inp.checked; }
+      const k = el.dataset.key; v[k] = el.querySelector("input").checked;
+      el.classList.toggle("sel", v[k]); updateTotal();
+    });
+  });
+  function updateTotal(){ const t = scoreOfVote(v, def); const el = card.querySelector(".js-total"); if (el) el.textContent = t; }
+  card.querySelector(".js-save").onclick = async () => {
+    if (!state.game?.isRoundActive) { alert("Приём закрыт."); return; }
+    const btn = card.querySelector(".js-save"); btn.disabled = true; btn.textContent = "Сохраняем…";
+    try {
+      v.gameId = state.game.gameId;
+      v.voterName = state.voterName;
+      v.total = scoreOfVote(v, def);
+      const r = await postAction("saveVote", { vote: v });
+      if (!r.ok) throw new Error(r.error || "save failed");
+      // апдейт локального стейта чтобы найти этот голос при перерендере
+      const idx = state.votes.findIndex(x => x.voterName===v.voterName && x.round===v.round && x.caseNum===v.caseNum && x.teamId===v.teamId);
+      if (idx>=0) state.votes[idx] = {...v}; else state.votes.push({...v});
+      btn.disabled = false; btn.textContent = "Сохранить";
+      const okEl = document.createElement("span");
+      okEl.className = "ok"; okEl.textContent = "✓ Сохранено · " + new Date().toLocaleTimeString("ru-RU");
+      card.querySelector(".btn-row").appendChild(okEl);
+      setTimeout(()=>okEl.remove(), 2400);
+    } catch(e) {
+      btn.disabled = false; btn.textContent = "Повторить";
+      const errEl = document.createElement("span");
+      errEl.className = "err"; errEl.textContent = "Ошибка: " + e.message;
+      card.querySelector(".btn-row").appendChild(errEl);
+      setTimeout(()=>errEl.remove(), 4000);
+    }
+  };
+}
+
+/* ============================================================
+ *  RENDER ROOT
+ * ============================================================ */
+function render() {
+  renderWho();
+  if (!WEBHOOK_URL) return renderSetup();
+  if (!state.role) return renderRolePicker();
+  if (state.role === "facilitator") {
+    if (!state.pinOk) return renderFacilitatorPin();
+    if (!state.game)  return renderFacilitatorNoGame();
+    return renderFacilitatorDashboard();
+  }
+  if (!state.voterName) return renderObserverNeedName();
+  if (!state.game || state.game.currentRound===0 || !state.game.isRoundActive) return renderObserverWaiting();
+  return renderObserverForm();
+}
+
+/* ============================================================
+ *  POLLING
+ * ============================================================ */
+async function pollOnce() {
+  if (!WEBHOOK_URL) return;
+  try {
+    const r = await postAction("getState");
+    if (r && r.ok) {
+      state.game = r.game;
+      state.votes = Array.isArray(r.votes) ? r.votes : [];
+      state.lastSyncAt = Date.now();
+      state.online = true;
+    }
+  } catch(e) {
+    state.online = false;
+    console.warn("poll failed", e.message);
+  }
+}
+
+let lastSig = "";
+function pickInterval() {
+  if (state.role === "facilitator") return POLL_FACILITATOR;
+  // observer
+  const filling = state.game?.isRoundActive && document.querySelector(".js-save");
+  return filling ? POLL_OBSERVER_FILLING : POLL_OBSERVER_WAITING;
+}
+async function pollLoop() {
+  try {
+    await pollOnce();
+    const sig = JSON.stringify({
+      g: state.game ? [state.game.gameId, state.game.currentRound, state.game.currentCase, state.game.isRoundActive, state.game.totalCases, state.game.teams.length] : null,
+      n: state.votes.length,
+    });
+    if (sig !== lastSig) {
+      lastSig = sig;
+      const fillingNow = state.role === "observer" && state.game?.isRoundActive && document.querySelector(".js-save");
+      if (!fillingNow) render();
+      else renderWho(); // обновим только индикатор связи в шапке
+    } else {
+      renderWho(); // обновим возраст последней синхронизации
+    }
+  } catch(e) {}
+  setTimeout(pollLoop, pickInterval());
+}
+
+/* ============================================================
+ *  BOOT
+ * ============================================================ */
+(async function boot(){
+  if (!WEBHOOK_URL) { renderSetup(); return; }
+  const params = readUrlParams();
+  if (params.role === "facilitator" || params.role === "observer") state.role = params.role;
+  if (params.name) state.voterName = params.name;
+  await pollOnce();
+  render();
+  pollLoop();
+})();
+</script>
+</body>
+</html>
